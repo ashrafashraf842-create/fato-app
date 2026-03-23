@@ -1,0 +1,666 @@
+<!DOCTYPE html>
+<link rel="manifest" href="manifest.json">
+<html dir="rtl" lang="ar">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>النظام المحاسبي الشامل - الإصدار الذكي</title>
+<style>
+  body { font-family: Tahoma, Arial; background: #e5ddd5; margin: 0; padding: 0; display: flex; flex-direction: column; height: 100vh; overflow: hidden; }
+  .screen { display: none; flex-direction: column; height: 100%; width: 100%; position: absolute; top: 0; left: 0; background: #e5ddd5; z-index: 10; }
+  .active-screen { display: flex; }
+  
+  #login-screen { background: #333333fa; justify-content: center; align-items: center; z-index: 9999; }
+  #login-box { background: white; padding: 30px; border-radius: 15px; text-align: center; box-shadow: 0 4px 10px rgba(0,0,0,0.3); width: 80%; max-width: 350px;}
+  #login-box input { padding: 10px; font-size: 18px; width: 80%; margin-bottom: 15px; text-align: center; border: 1px solid #ccc; border-radius: 10px;}
+  #login-box button { background: #008f68; color: white; border: none; padding: 10px 20px; font-size: 16px; border-radius: 10px; cursor: pointer; font-weight: bold; width: 100%;}
+
+  #main-menu { background: #f0f2f5; justify-content: center; align-items: center; }
+  .menu-btn { color: white; border: none; padding: 18px; margin: 10px; font-size: 16px; border-radius: 15px; cursor: pointer; font-weight: bold; width: 85%; max-width: 350px; box-shadow: 0 4px 6px rgba(0,0,0,0.1); }
+  .btn-1 { background: #0052cc; } .btn-2 { background: #d97706; } .btn-3 { background: #008f68; } .btn-4 { background: #4b5563; } .btn-5 { background: #8b5cf6; }
+
+  .header { background: #008f68; color: white; padding: 15px; text-align: center; font-size: 18px; font-weight: bold; display: flex; justify-content: space-between; align-items: center; box-shadow: 0 2px 4px rgba(0,0,0,0.1); z-index: 20;}
+  .back-btn { background: rgba(255,255,255,0.2); border: none; color: white; padding: 5px 15px; border-radius: 5px; cursor: pointer; font-weight: bold; font-size: 14px;}
+
+  .data-screen { background: #fff; overflow-y: auto; flex: 1; }
+  .form-box { padding: 15px; background: #f9f9f9; border-bottom: 2px solid #ddd; }
+  .form-box input { padding: 10px; margin: 5px 2px; border: 1px solid #ccc; border-radius: 5px; box-sizing: border-box; width: calc(50% - 8px);}
+  .form-box input.full-width { width: 100%; margin: 5px 0;}
+  .form-box button { background: #008f68; color: white; border: none; padding: 10px; border-radius: 5px; cursor: pointer; font-weight: bold; width: 100%; margin-top: 5px;}
+  .data-table { width: 100%; border-collapse: collapse; margin-top: 10px; text-align: center; font-size: 14px; }
+  .data-table th, .data-table td { border: 1px solid #ddd; padding: 10px; }
+  .data-table th { background-color: #f2f2f2; }
+  .del-btn { background: #cc0000; color: white; border: none; padding: 5px 10px; border-radius: 5px; cursor: pointer; }
+
+  .chat-container { flex: 1; overflow-y: auto; padding: 15px; display: flex; flex-direction: column; background: #e5ddd5; }
+  .msg { max-width: 85%; padding: 12px; margin: 8px 0; border-radius: 15px; line-height: 1.6; font-size: 15px; }
+  .user-msg { background: #dcf8c6; align-self: flex-start; border-bottom-right-radius: 0; }
+  .bot-msg { background: #ffffff; align-self: flex-end; border-bottom-left-radius: 0; }
+  .invoice-table { width: 100%; border-collapse: collapse; margin: 10px 0; font-size: 13px; background: #fff; }
+  .invoice-table th, .invoice-table td { border: 1px solid #ccc; padding: 6px; text-align: center; }
+  .invoice-table th { background-color: #e9ecef; }
+  .invoice-summary { font-size: 14px; line-height: 1.8; }
+  
+  .input-area { display: flex; padding: 10px; background: #f0f0f0; border-top: 1px solid #ccc; align-items: center;}
+  .input-area input { flex: 1; padding: 12px; border-radius: 20px; border: 1px solid #ccc; outline: none; font-size: 16px; direction: rtl; }
+  .input-area button.send-btn { background: #008f68; color: white; border: none; padding: 10px 15px; margin-right: 10px; border-radius: 20px; font-weight: bold; cursor: pointer;}
+  .mic-btn { background: transparent; border: none; font-size: 24px; color: #008f68; cursor: pointer; padding: 0 10px; }
+  
+  .action-btn { border: none; padding: 8px 12px; border-radius: 8px; cursor: pointer; font-weight: bold; font-size: 13px; margin-top: 5px; }
+  .share-btn { background: #25D366; color: white; margin-left: 5px;}
+  .dl-btn { background: #0052cc; color: white; }
+</style>
+</head>
+<body>
+<script>
+if ('serviceWorker' in navigator) {
+  navigator.serviceWorker.register('service-worker.js');
+}
+</script>
+<div id="login-screen" class="screen active-screen">
+  <div id="login-box">
+    <h2>🔒 النظام المحاسبي</h2>
+    <input type="password" id="pass-input" placeholder="كلمة السر...">
+    <br><button onclick="checkPass()">تسجيل الدخول</button>
+  </div>
+</div>
+
+<div id="main-menu" class="screen">
+  <h2 style="color:#333; margin-bottom: 20px; text-align: center;">القائمة الرئيسية</h2>
+  <button class="menu-btn btn-1" onclick="showScreen('products-screen')">📦 1. إضافة وتعديل المخزن</button>
+  <button class="menu-btn btn-2" onclick="showScreen('customers-screen')">👥 2. إضافة وتعديل عميل</button>
+  <button class="menu-btn btn-3" onclick="showScreen('chat-screen'); addWelcomeMsg();">📝 3. تسجيل يومية اليوم</button>
+  <button class="menu-btn btn-4" onclick="showScreen('archive-screen'); addArchiveWelcomeMsg();">🗂️ 4. أرشيف البيانات والصور</button>
+  <button class="menu-btn btn-5" onclick="showScreen('backup-screen');">💾 5. النسخ الاحتياطي للأمان</button>
+</div>
+
+<div id="backup-screen" class="screen">
+  <div class="header" style="background:#8b5cf6;"><span>النسخ الاحتياطي</span><button class="back-btn" onclick="showScreen('main-menu')">رجوع</button></div>
+  <div class="data-screen" style="padding: 20px; text-align: center;">
+    <p style="font-size: 16px; line-height: 1.6; color: #333;">احتفظ بنسخة من كل حساباتك لتأمينها أو لنقلها لموبايل آخر.</p>
+    <button onclick="exportBackup()" style="background:#0052cc; color:white; padding:15px; border:none; border-radius:10px; width:100%; margin-bottom:30px; font-size:16px; font-weight:bold; cursor:pointer;">⬇️ تحميل نسخة احتياطية (حفظ)</button>
+    <hr style="border: 1px solid #ddd; margin-bottom: 30px;">
+    <h3 style="color:#d97706;">استرجاع البيانات</h3>
+    <input type="file" id="backup-file" accept=".json" style="margin-bottom:15px; width:100%; padding: 10px; border: 1px solid #ccc;">
+    <button onclick="importBackup()" style="background:#d97706; color:white; padding:15px; border:none; border-radius:10px; width:100%; font-size:16px; font-weight:bold; cursor:pointer;">⬆️ استرجاع البيانات الآن</button>
+  </div>
+</div>
+
+<div id="products-screen" class="screen">
+  <div class="header"><span>المخزن (المنتجات)</span><button class="back-btn" onclick="showScreen('main-menu')">رجوع</button></div>
+  <div class="data-screen">
+    <div class="form-box">
+      <h3 style="margin-top:0;">إضافة صنف جديد</h3>
+      <input type="text" id="new-prod-name" placeholder="الاسم (مثال: كيري)" class="full-width">
+      <input type="text" id="new-prod-weight" placeholder="الوزن (اختياري)">
+      <input type="number" id="new-prod-price" placeholder="السعر">
+      <button onclick="addProduct()">➕ إضافة للمخزن</button>
+    </div>
+    <div style="padding: 15px;"><table class="data-table" id="inventory-table"></table></div>
+  </div>
+</div>
+
+<div id="customers-screen" class="screen">
+  <div class="header"><span>قائمة العملاء</span><button class="back-btn" onclick="showScreen('main-menu')">رجوع</button></div>
+  <div class="data-screen">
+    <div class="form-box">
+      <h3 style="margin-top:0;">إضافة/تعديل عميل</h3>
+      <input type="text" id="new-cust-name" placeholder="اسم العميل" class="full-width">
+      <input type="number" id="new-cust-balance" placeholder="الرصيد الافتتاحي (عليه كام؟)" class="full-width">
+      <button onclick="addCustomer()">👤 حفظ العميل</button>
+    </div>
+    <div style="padding: 15px;"><table class="data-table" id="customers-table"></table></div>
+  </div>
+</div>
+
+<div id="chat-screen" class="screen">
+  <div class="header"><span>تسجيل اليومية</span><button class="back-btn" onclick="showScreen('main-menu')">رجوع</button></div>
+  <div id="chat-container" class="chat-container"></div>
+  <div class="input-area">
+    <button class="mic-btn" onclick="startVoiceDictation('user-input')">🎤</button>
+    <input type="text" id="user-input" placeholder="مثال: حسين دفع 100 يوم 15-3...">
+    <button class="send-btn" onclick="handleUserInput()">إرسال</button>
+  </div>
+</div>
+
+<div id="archive-screen" class="screen">
+  <div class="header" style="background:#4b5563;"><span>الأرشيف والبحث</span><button class="back-btn" onclick="showScreen('main-menu')">رجوع</button></div>
+  <div id="archive-container" class="chat-container"></div>
+  <div class="input-area">
+    <button class="mic-btn" onclick="startVoiceDictation('archive-input')">🎤</button>
+    <input type="text" id="archive-input" placeholder="مثال: يومية 15/3 ...">
+    <button class="send-btn" onclick="handleArchiveInput()" style="background:#4b5563;">بحث</button>
+  </div>
+</div>
+
+<script>
+function printInvoiceThermal(index) {
+      var inv = invoicesArchive[index];
+      if(!inv) return;
+      
+      // بناء محتوى الطباعة بدون أزرار الشات
+      var oldBal = inv.oldBal !== undefined ? inv.oldBal : (inv.remaining + inv.paid - inv.total);
+      var items = inv.detailsArray || [{name: inv.itemsText || "-", qty: '-', price: '-', total: inv.total}];
+      
+      var printContent = "<b>🧾 بيان حساب: " + inv.customer + "</b><br>التاريخ: " + inv.date + "<br>رصيد سابق: " + oldBal + " ج<hr>";
+      
+      if (items.length > 0 && items[0].name !== "-") {
+          printContent += "<table><tr><th>المنتج</th><th>ع</th><th>السعر</th><th>قيمة</th></tr>";
+          for (var i = 0; i < items.length; i++) { 
+              printContent += "<tr><td>" + items[i].name + "</td><td>" + items[i].qty + "</td><td>" + items[i].price + "</td><td>" + items[i].total + "</td></tr>"; 
+          } 
+          printContent += "</table><hr>";
+      }
+      printContent += "إجمالي الحساب: <b>" + inv.total + " ج</b><br>";
+      printContent += "المدفوع نقدي: <b>" + inv.paid + " ج</b><br><hr>";
+      printContent += "<b>الباقي المستحق: " + inv.remaining + " ج</b><br>";
+      printContent += "<br><center>شكراً لتعاملكم معنا</center><br><br>";
+
+      // فتح نافذة طباعة مؤقتة
+      var printWindow = window.open('', '_blank', 'width=300,height=500');
+      printWindow.document.write('<html dir="rtl"><head><title>طباعة إيصال</title>');
+      printWindow.document.write('<style>');
+      // تنسيق مخصص لطابعات 58mm
+      printWindow.document.write('body { font-family: Tahoma, Arial, sans-serif; width: 58mm; margin: 0 auto; padding: 0; font-size: 13px; color: #000; }');
+      printWindow.document.write('table { width: 100%; border-collapse: collapse; margin: 10px 0; font-size: 11px; }');
+      printWindow.document.write('th, td { border-bottom: 1px dashed #000; padding: 4px 2px; text-align: right; }');
+      printWindow.document.write('hr { border: 0; border-top: 1px dashed #000; margin: 8px 0; }');
+      printWindow.document.write('</style></head><body>');
+      printWindow.document.write(printContent);
+      printWindow.document.write('</body></html>');
+      printWindow.document.close();
+      
+      // نعطي المتصفح نصف ثانية لتحميل النافذة ثم نطلب الطباعة
+      setTimeout(function() { 
+          printWindow.print(); 
+          printWindow.close(); 
+      }, 500);
+  }
+  var customers = JSON.parse(localStorage.getItem('myCustomers')) || { "اشرف رمزي": { balance: 1350 }, "اشرف السرو": { balance: 200 } };
+  var products = JSON.parse(localStorage.getItem('myProducts')) || { "زبادي": { "صغير": 5, "كبير": 10 }, "كيري": { "2 ونص": 190 } };
+  var dailyLog = JSON.parse(localStorage.getItem('myDailyLog')) || [];
+  var invoicesArchive = JSON.parse(localStorage.getItem('myInvoicesArchive')) || [];
+  
+  var botState = { type: 'IDLE' }; 
+  var archiveBotState = { type: 'IDLE' }; 
+  var welcomeShown = false; var archiveWelcomeShown = false;
+
+  function saveData() {
+      localStorage.setItem('myCustomers', JSON.stringify(customers));
+      localStorage.setItem('myProducts', JSON.stringify(products));
+      localStorage.setItem('myDailyLog', JSON.stringify(dailyLog));
+      localStorage.setItem('myInvoicesArchive', JSON.stringify(invoicesArchive));
+  }
+
+  // --- الفلتر الذكي للعربي ---
+  function normalizeArabic(text) {
+      if(!text) return "";
+      return text.replace(/[أإآ]/g, 'ا')
+                 .replace(/[ىي]/g, 'ي')
+                 .replace(/[ةه]/g, 'ه')
+                 .replace(/\s+/g, ' ').trim();
+  }
+
+  // --- التسجيل الصوتي ---
+  function startVoiceDictation(inputId) {
+      if (!('webkitSpeechRecognition' in window)) {
+          alert("متصفحك لا يدعم التسجيل الصوتي. يرجى استخدام متصفح مثل جوجل كروم.");
+          return;
+      }
+      var recognition = new webkitSpeechRecognition();
+      recognition.lang = 'ar-EG';
+      recognition.continuous = false;
+      recognition.interimResults = false;
+      recognition.onstart = function() { addMessage("🎤 جاري الاستماع...", "bot", inputId === 'user-input' ? "chat-container" : "archive-container"); };
+      recognition.onresult = function(event) {
+          var text = event.results[0][0].transcript;
+          var inp = document.getElementById(inputId);
+          inp.value = (inp.value + " " + text).trim();
+      };
+      recognition.onerror = function(e) { addMessage("حدث خطأ في المايك.", "bot", inputId === 'user-input' ? "chat-container" : "archive-container"); };
+      recognition.start();
+  }
+
+  function getTodayDate() { 
+      var d = new Date(); 
+      if (d.getHours() < 4) { d.setDate(d.getDate() - 1); }
+      return d.getDate() + "/" + (d.getMonth() + 1) + "/" + d.getFullYear(); 
+  }
+  function getShortDate(fullDateStr) { var parts = fullDateStr.split('/'); if(parts.length >= 2) return parts[0] + "/" + parts[1]; return fullDateStr; }
+
+  function showScreen(screenId) {
+      var screens = document.getElementsByClassName('screen');
+      for(var i=0; i<screens.length; i++) screens[i].classList.remove('active-screen');
+      document.getElementById(screenId).classList.add('active-screen');
+      if(screenId === 'products-screen') renderInventory();
+      if(screenId === 'customers-screen') renderCustomers();
+      if(screenId === 'main-menu') { document.getElementById('archive-container').innerHTML = ''; archiveBotState = { type: 'IDLE' }; archiveWelcomeShown = false; }
+      if(screenId === 'archive-screen') { addArchiveWelcomeMsg(); }
+  }
+
+  function checkPass() { if(document.getElementById("pass-input").value === "5050") showScreen('main-menu'); else alert("كلمة السر خاطئة!"); }
+
+  // --- النسخ الاحتياطي ---
+  function exportBackup() {
+      var dataToSave = { customers: customers, products: products, dailyLog: dailyLog, invoicesArchive: invoicesArchive };
+      var dataStr = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify(dataToSave));
+      var link = document.createElement('a'); link.setAttribute("href", dataStr);
+      link.setAttribute("download", "Backup_" + getTodayDate().replace(/\//g, '-') + ".json");
+      document.body.appendChild(link); link.click(); link.remove();
+      alert("تم تحميل النسخة الاحتياطية بنجاح! احتفظ بالملف في مكان آمن.");
+  }
+  function importBackup() {
+      var file = document.getElementById('backup-file').files[0];
+      if (!file) { alert("يرجى اختيار ملف النسخة الاحتياطية أولاً!"); return; }
+      if (confirm("تحذير: استرجاع البيانات سيمسح البيانات الحالية. متأكد؟")) {
+          var reader = new FileReader();
+          reader.onload = function(e) {
+              try {
+                  var importedData = JSON.parse(e.target.result);
+                  if(importedData.customers) customers = importedData.customers;
+                  if(importedData.products) products = importedData.products;
+                  if(importedData.dailyLog) dailyLog = importedData.dailyLog;
+                  if(importedData.invoicesArchive) invoicesArchive = importedData.invoicesArchive;
+                  saveData(); alert("تم الاسترجاع بنجاح!"); location.reload(); 
+              } catch(err) { alert("عفواً، الملف غير صالح أو تالف."); }
+          };
+          reader.readAsText(file);
+      }
+  }
+
+  // --- المخزن والعملاء ---
+  function renderInventory() {
+      var tbody = "<tr><th>المنتج</th><th>الوزن</th><th>السعر</th><th>حذف</th></tr>";
+      for (var base in products) {
+          for (var weight in products[base]) {
+              var wName = weight === "default" ? "-" : weight;
+              tbody += "<tr><td>" + base + "</td><td>" + wName + "</td><td>" + products[base][weight] + "</td>";
+              tbody += "<td><button class='del-btn' onclick='deleteProduct(\"" + base + "\", \"" + weight + "\")'>❌</button></td></tr>";
+          }
+      }
+      document.getElementById("inventory-table").innerHTML = tbody;
+  }
+  function addProduct() {
+      var name = document.getElementById("new-prod-name").value.trim(); var weight = document.getElementById("new-prod-weight").value.trim() || "default"; var price = parseFloat(document.getElementById("new-prod-price").value);
+      if(!name || isNaN(price)) { alert("أدخل البيانات صحيحة!"); return; }
+      if(!products[name]) products[name] = {}; products[name][weight] = price;
+      saveData(); renderInventory(); document.getElementById("new-prod-name").value = ""; document.getElementById("new-prod-weight").value = ""; document.getElementById("new-prod-price").value = "";
+  }
+  function deleteProduct(base, weight) { if(confirm("حذف المنتج؟")) { delete products[base][weight]; if(Object.keys(products[base]).length === 0) delete products[base]; saveData(); renderInventory(); } }
+
+  function renderCustomers() {
+      var tbody = "<tr><th>اسم العميل</th><th>الرصيد الحالي</th><th>حذف</th></tr>";
+      for (var c in customers) {
+          tbody += "<tr><td>" + c + "</td><td style='font-weight:bold; color:#0052cc;'>" + customers[c].balance + " ج</td>";
+          tbody += "<td><button class='del-btn' onclick='deleteCustomer(\"" + c + "\")'>❌</button></td></tr>";
+      }
+      document.getElementById("customers-table").innerHTML = tbody;
+  }
+  function addCustomer() {
+      var name = document.getElementById("new-cust-name").value.trim(); var bal = parseFloat(document.getElementById("new-cust-balance").value);
+      if(!name || isNaN(bal)) { alert("أدخل اسم العميل والرصيد!"); return; }
+      customers[name] = { balance: bal }; saveData(); renderCustomers(); document.getElementById("new-cust-name").value = ""; document.getElementById("new-cust-balance").value = "";
+  }
+  function deleteCustomer(name) { if(confirm("هل أنت متأكد من حذف حساب العميل ( " + name + " ) نهائياً؟")) { delete customers[name]; saveData(); renderCustomers(); } }
+
+  // --- بناء صورة / مشاركة الحساب ---
+  function buildInvoiceHTML(inv, index) {
+      var oldBal = inv.oldBal !== undefined ? inv.oldBal : (inv.remaining + inv.paid - inv.total);
+      var reply = "<b>🧾 بيان حساب: " + inv.customer + " (" + inv.date + ")</b><br><div class='invoice-summary'>رصيد سابق: " + oldBal + " ج</div>";
+      var items = inv.detailsArray || [{name: inv.itemsText || "-", qty: '-', price: '-', total: inv.total}];
+      if (items.length > 0 && items[0].name !== "-") {
+          reply += "<table class='invoice-table'><tr><th>المنتج</th><th>العدد</th><th>السعر</th><th>الإجمالي</th></tr>";
+          for (var i = 0; i < items.length; i++) { reply += "<tr><td>" + items[i].name + "</td><td>" + items[i].qty + "</td><td>" + items[i].price + "</td><td>" + items[i].total + "</td></tr>"; } reply += "</table>";
+      }
+      reply += "<div class='invoice-summary'>إجمالي الحساب: " + inv.total + " ج<br>المدفوع نقدي: " + inv.paid + " ج<br><hr style='margin: 8px 0;'><b>الرصيد الحالي المستحق: " + inv.remaining + " ج</b></div>";
+      
+      // أزرار المشاركة والطباعة
+      var realIndex = index !== undefined ? index : (invoicesArchive.length - 1);
+      reply += "<div style='margin-top:10px;'>";
+      reply += "<button class='action-btn share-btn' onclick='processInvoiceAction(" + realIndex + ",\"share\")'>📤 مشاركة واتساب</button>";
+      reply += "<button class='action-btn dl-btn' style='margin-right:5px;' onclick='processInvoiceAction(" + realIndex + ",\"download\")'>⬇️ تحميل صورة</button>";
+      // الزر الجديد للطباعة الحرارية Xprinter
+      reply += "<button class='action-btn' style='background:#333; color:white; margin-right:5px;' onclick='printInvoiceThermal(" + realIndex + ")'>🖨️ طباعة إيصال</button>";
+      reply += "</div>";
+
+      return reply;
+  }
+
+  // --- الشات اليومي ---
+  function addWelcomeMsg() { if(!welcomeShown) { addMessage("<b>مرحباً!</b><br>التاريخ اليوم: " + getTodayDate() + "<br>جاهز للتسجيل. للتسجيل في يوم سابق اكتب مثلاً (دفع يوم 15-3).", "bot", "chat-container"); welcomeShown = true; } }
+  function toEnglishNumbers(str) { var a = ['٠','١','٢','٣','٤','٥','٦','٧','٨','٩']; return str.replace(/[٠-٩]/g, function(w) { return a.indexOf(w); }); }
+  function addMessage(text, sender, containerId) {
+    var box = document.getElementById(containerId); var msgDiv = document.createElement("div");
+    msgDiv.className = "msg " + (sender === "user" ? "user-msg" : "bot-msg"); msgDiv.innerHTML = text;
+    box.appendChild(msgDiv); box.scrollTop = box.scrollHeight;
+  }
+
+  function extractNameFromText(text) {
+      var t = text.replace(/^(اريد فواتير يوم|استخرجلي اخر\s+\d+\s+فواتير لـ?|استخرجلي حساب|حساب|رصيد|كشف)\s*/, "");
+      // تم إضافة كلمات التجاهل (خد، اخذ، اشترى) لمنع مشكلة "حسين خد"
+      var match = t.match(/^([^\d]+?)\s*(?:خد|اخد|اخذ|اشترى|جاب|دفع|عطاني|اعطاني|تحصيل|[\d])/);
+      if (match && match[1]) return match[1].trim();
+      return t.trim();
+  }
+
+  function identifyCustomer(typedName) {
+      var normTyped = normalizeArabic(typedName);
+      var exactMatch = null; var partialMatches = []; var typedWords = normTyped.split(" ");
+      
+      for (var c in customers) {
+          var normC = normalizeArabic(c);
+          if (normC === normTyped) { exactMatch = c; break; }
+          var overlap = 0; var cWords = normC.split(" ");
+          for(var i=0; i<typedWords.length; i++) { if(cWords.indexOf(typedWords[i]) !== -1) overlap++; }
+          if(overlap > 0 || normC.indexOf(normTyped) !== -1 || normTyped.indexOf(normC) !== -1) { partialMatches.push(c); }
+      }
+      if (exactMatch) return { status: 'EXACT', name: exactMatch };
+      if (partialMatches.length === 1) return { status: 'SINGLE_PARTIAL', name: partialMatches[0] };
+      if (partialMatches.length > 1) return { status: 'MULTIPLE', options: partialMatches };
+      return { status: 'NOT_FOUND', name: typedName };
+  }
+
+  function handleUserInput() {
+    var inputField = document.getElementById("user-input"); var rawText = inputField.value.trim();
+    if (!rawText) return; addMessage(rawText, "user", "chat-container"); inputField.value = ""; var text = toEnglishNumbers(rawText);
+
+    if (botState.type !== 'IDLE') { 
+        if(text === "الغاء" || text === "إلغاء") { botState = { type: 'IDLE' }; addMessage("تم الإلغاء.", "bot", "chat-container"); return; }
+        if (botState.type === 'WAIT_CLEAR_CHAT') {
+            if (text === "نعم" || text === "اه" || text === "أيوة") { document.getElementById('chat-container').innerHTML = ''; botState = { type: 'IDLE' }; welcomeShown = false; addWelcomeMsg(); return; } 
+            else if (text === "لا") { botState = { type: 'IDLE' }; addMessage("تم الاحتفاظ بالدردشة.", "bot", "chat-container"); return; } 
+            else { botState = { type: 'IDLE' }; }
+        } else { processInteractiveState(text); return; }
+    }
+    
+    if (text.indexOf("انتهى اليوم") !== -1 || text.indexOf("انتهي اليوم") !== -1 || text.indexOf("تقفيل اليوم") !== -1) { endOfDay(); return; }
+
+    // اكتشاف التواريخ السابقة بأثر رجعي
+    var dateMatch = text.match(/(?:يوم|بتاريخ)\s*(\d{1,2}[-/]\d{1,2})/);
+    var customDate = null;
+    if (dateMatch) {
+        var parts = dateMatch[1].replace('-', '/').split('/');
+        var currentYear = new Date().getFullYear();
+        customDate = parts[0] + "/" + parts[1] + "/" + currentYear;
+        text = text.replace(dateMatch[0], "").trim(); // نمسح التاريخ من النص عشان ميبوظش الحساب
+    }
+
+    var namePart = extractNameFromText(text); var idResult = identifyCustomer(namePart);
+
+    if ((text.indexOf("حساب") !== -1 || text.indexOf("رصيد") !== -1) && text.indexOf("دفع") === -1) {
+        if (idResult.status === 'EXACT' || idResult.status === 'SINGLE_PARTIAL') { addMessage("حساب " + idResult.name + " الحالي: <b>" + customers[idResult.name].balance + " ج</b>", "bot", "chat-container"); } 
+        else if (idResult.status === 'MULTIPLE') { addMessage("أكثر من عميل بهذا الاسم، هل تقصد: " + idResult.options.join(" أم ") + "؟", "bot", "chat-container"); } 
+        else { addMessage("العميل غير مسجل.", "bot", "chat-container"); }
+        return;
+    }
+    startTransactionFlow(text, text, idResult, namePart, customDate);
+  }
+
+  function startTransactionFlow(text, originalText, idResult, namePart, customDate) {
+      if (idResult.status === 'EXACT' || idResult.status === 'SINGLE_PARTIAL') { processTransaction(text, originalText, idResult.name, {}, customDate); } 
+      else if (idResult.status === 'MULTIPLE') {
+          botState = { type: 'WAIT_CUSTOMER_CLARIFICATION', origText: originalText, options: idResult.options, typedName: namePart, customDate: customDate };
+          addMessage("لدينا أكثر من عميل بهذا الاسم.. هل تقصد (" + idResult.options.join(" أم ") + ") أم عميل جديد؟ (أو اكتب 'الغاء')", "bot", "chat-container");
+      } else {
+          botState = { type: 'WAIT_NEW_CUSTOMER_CONFIRM', origText: originalText, newCustName: namePart, customDate: customDate };
+          addMessage("العميل '" + namePart + "' غير مسجل. هل هو عميل جديد؟ (نعم / لا)", "bot", "chat-container");
+      }
+  }
+
+  function processTransaction(text, originalText, foundCustomer, confirmedPrices, customDate) {
+    confirmedPrices = confirmedPrices || {};
+    var paidMatch = text.match(/(?:دفع|عطاني|اعطاني|تحصيل|جاب)\s*(\d+(?:\.\d+)?)/);
+    var paidAmount = paidMatch ? parseFloat(paidMatch[1]) : 0;
+    var itemsText = text.replace(/(?:دفع|عطاني|اعطاني|تحصيل|جاب)\s*(\d+(?:\.\d+)?)/, "");
+
+    var regex = /(\d+(?:\.\d+)?)\s+((?:[^\d]+|(?:سعر الواحدة|سعر الواحده|بسعر|سعر|بـ|ب)\s*\d+(?:\.\d+)?)+)/g;
+    var match; var totalBill = 0; var billDetailsArray = []; var z_s_qty = 0; var z_k_qty = 0; var invoiceDetailsStr = []; 
+
+    while ((match = regex.exec(itemsText)) !== null) {
+      var qty = parseFloat(match[1]); 
+      var itemStr = match[2].trim(); 
+      var priceRegex = /(?:سعر الواحدة|سعر الواحده|بسعر|سعر|بـ|ب)\s*(\d+(?:\.\d+)?)/;
+      var priceOverrideMatch = itemStr.match(priceRegex);
+      var customPrice = priceOverrideMatch ? parseFloat(priceOverrideMatch[1]) : null;
+      itemStr = itemStr.replace(priceRegex, "").replace(/\s*و\s*$/, '').trim();
+
+      var matchedBase = null; var matchedVariation = null;
+      var normItemStr = normalizeArabic(itemStr);
+
+      for (var baseProd in products) {
+          if (normItemStr.indexOf(normalizeArabic(baseProd)) !== -1) {
+              matchedBase = baseProd; var variations = products[baseProd];
+              if (variations["default"]) matchedVariation = "default";
+              else { 
+                  for (var v in variations) { 
+                      var normV = normalizeArabic(v);
+                      if (normItemStr.indexOf(normV) !== -1 || (normV === "صغير" && normItemStr.indexOf("ص")!==-1) || (normV === "كبير" && normItemStr.indexOf("ك")!==-1)) { 
+                          matchedVariation = v; break; 
+                      } 
+                  } 
+              }
+              break;
+          }
+      }
+
+      if (matchedBase) {
+          if (!matchedVariation) {
+              var storedVariations = Object.keys(products[matchedBase]);
+              if(storedVariations.length === 1) matchedVariation = storedVariations[0];
+              else {
+                  botState = { type: 'WAIT_WEIGHT', origText: originalText, ambiguousStr: itemStr, baseProd: matchedBase, custName: foundCustomer, customDate: customDate };
+                  addMessage("المنتج بأوزان متعددة.. هل تقصد " + matchedBase + " " + storedVariations.join(" أم ") + "؟ (أو اكتب 'الغاء')", "bot", "chat-container"); return; 
+              }
+          }
+          
+          var price = products[matchedBase][matchedVariation]; 
+          var itemKey = matchedBase + "_" + matchedVariation;
+
+          if (customPrice !== null && customPrice !== price) {
+              if (confirmedPrices[itemKey] !== customPrice) {
+                  botState = { type: 'WAIT_PRICE_CONFIRM', origText: originalText, custName: foundCustomer, itemKey: itemKey, customPrice: customPrice, confirmedPrices: confirmedPrices, customDate: customDate };
+                  var dispName = matchedVariation === "default" ? matchedBase : matchedBase + " " + matchedVariation;
+                  addMessage("سعر " + dispName + " الأصلي هو " + price + " ج، هل متأكد من تغييره لـ " + customPrice + " ج لهذه العملية فقط؟ (نعم / لا)", "bot", "chat-container"); 
+                  return;
+              } else { price = customPrice; }
+          }
+
+          var cost = qty * price; totalBill += cost;
+          var finalName = matchedVariation === "default" ? matchedBase : matchedBase + " " + matchedVariation;
+          var weightStr = matchedVariation === "default" ? "" : " وزن " + matchedVariation;
+          var detailLine = "عدد " + qty + " " + matchedBase + weightStr;
+          
+          if (customPrice !== null && price === customPrice) { detailLine += " (بسعر " + customPrice + ")"; }
+          
+          if(matchedBase === "زبادي" && matchedVariation === "صغير") z_s_qty += qty;
+          else if(matchedBase === "زبادي" && matchedVariation === "كبير") z_k_qty += qty;
+          else invoiceDetailsStr.push(detailLine); 
+          
+          billDetailsArray.push({ name: finalName, qty: qty, price: price, total: cost });
+      } else {
+          botState = { type: 'WAIT_NEW_PROD', origText: originalText, newProdName: itemStr.split(" ")[0], custName: foundCustomer, customDate: customDate };
+          addMessage("المنتج '" + itemStr.split(" ")[0] + "' غير مسجل. هل أضيفه للمخزن؟ (نعم/لا)", "bot", "chat-container"); return;
+      }
+    }
+
+    var oldBalance = customers[foundCustomer].balance;
+    var newBalance = oldBalance + totalBill - paidAmount;
+    customers[foundCustomer].balance = newBalance;
+
+    var todayStr = customDate || getTodayDate();
+    var isBackdated = customDate && customDate !== getTodayDate();
+
+    var invoiceObject = { date: todayStr, customer: foundCustomer, oldBal: oldBalance, total: totalBill, paid: paidAmount, remaining: newBalance, itemsText: invoiceDetailsStr.length > 0 ? invoiceDetailsStr.join(' + ') : (z_s_qty||z_k_qty ? "زبادي" : "-"), detailsArray: billDetailsArray };
+
+    if (totalBill > 0 || paidAmount > 0) {
+        if (!isBackdated) {
+            // تسجيل لليوم الحالي فقط
+            dailyLog.push({ name: foundCustomer, oldBal: oldBalance, billVal: totalBill, z_s: z_s_qty, z_k: z_k_qty, details: invoiceObject.itemsText, paid: paidAmount, newBal: newBalance });
+        }
+        invoicesArchive.push(invoiceObject); saveData(); 
+    }
+    
+    var replyHtml = buildInvoiceHTML(invoiceObject, invoicesArchive.length - 1);
+    if(isBackdated) { replyHtml = "<span style='color:#d97706'>⚠️ تسجيل بأثر رجعي محفوظ بالأرشيف</span><br>" + replyHtml; }
+    addMessage(replyHtml, "bot", "chat-container");
+  }
+
+  function processInteractiveState(text) {
+      if (botState.type === 'WAIT_PRICE_CONFIRM') {
+          if (text === "نعم" || text === "اه" || text === "أيوة") {
+              botState.confirmedPrices[botState.itemKey] = botState.customPrice;
+              var oText = botState.origText; var cName = botState.custName; var cPrices = botState.confirmedPrices; var cd = botState.customDate;
+              botState = { type: 'IDLE' }; processTransaction(oText, oText, cName, cPrices, cd);
+          } else { botState = { type: 'IDLE' }; addMessage("تم الإلغاء.", "bot", "chat-container"); }
+      }
+      else if (botState.type === 'WAIT_CUSTOMER_CLARIFICATION') {
+          if (text.indexOf("جديد") !== -1) {
+              customers[botState.typedName] = { balance: 0 }; saveData(); renderCustomers();
+              addMessage("تم إضافة العميل الجديد. جاري التسجيل...", "bot", "chat-container");
+              var orig = botState.origText; var tName = botState.typedName; var cd = botState.customDate; botState = { type: 'IDLE' }; processTransaction(orig, orig, tName, {}, cd);
+          } else {
+              var matched = null; var normT = normalizeArabic(text);
+              for(var i=0; i<botState.options.length; i++) { if(normalizeArabic(botState.options[i]).indexOf(normT) !== -1 || normT.indexOf(normalizeArabic(botState.options[i])) !== -1) { matched = botState.options[i]; break; } }
+              if (matched) { var newText = botState.origText; var cd2 = botState.customDate; botState = { type: 'IDLE' }; processTransaction(newText, newText, matched, {}, cd2); } 
+              else { addMessage("يرجى كتابة الاسم بوضوح.", "bot", "chat-container"); }
+          }
+      }
+      else if (botState.type === 'WAIT_NEW_CUSTOMER_CONFIRM') {
+          if (text === "نعم" || text === "اه") {
+              customers[botState.newCustName] = { balance: 0 }; saveData(); renderCustomers();
+              addMessage("تم إضافة كعميل جديد. جاري التسجيل...", "bot", "chat-container");
+              var orig2 = botState.origText; var cName2 = botState.newCustName; var cd3 = botState.customDate; botState = { type: 'IDLE' }; processTransaction(orig2, orig2, cName2, {}, cd3);
+          } else { botState = { type: 'IDLE' }; addMessage("تم الإلغاء.", "bot", "chat-container"); }
+      }
+      else if (botState.type === 'WAIT_WEIGHT') { var newT = botState.origText.replace(botState.ambiguousStr, botState.baseProd + " " + text); var cN = botState.custName; var cd4 = botState.customDate; botState = { type: 'IDLE' }; processTransaction(newT, newT, cN, {}, cd4); } 
+      else if (botState.type === 'WAIT_NEW_PROD') {
+          if (text === "نعم" || text === "اه") { botState.type = 'WAIT_NEW_PROD_TYPE'; addMessage("له أوزان أم وزن واحد؟ (اكتب 'اوزان' أو 'وزن واحد')", "bot", "chat-container"); } 
+          else { botState = { type: 'IDLE' }; addMessage("تم الإلغاء.", "bot", "chat-container"); }
+      }
+      else if (botState.type === 'WAIT_NEW_PROD_TYPE') {
+          if (text.indexOf("واحد") !== -1) { botState.type = 'WAIT_NEW_PROD_PRICE_SINGLE'; addMessage("كم سعره؟", "bot", "chat-container"); } 
+          else { botState.type = 'WAIT_NEW_PROD_PRICE_MULTI'; addMessage("اكتب الأوزان والأسعار: كيلو 50, نص 25", "bot", "chat-container"); }
+      }
+      else if (botState.type === 'WAIT_NEW_PROD_PRICE_SINGLE') {
+          if(!products[botState.newProdName]) products[botState.newProdName] = {}; products[botState.newProdName]["default"] = parseFloat(text); saveData();
+          addMessage("تم الإضافة للمخزن.", "bot", "chat-container"); var o1 = botState.origText; var cn1 = botState.custName; var cd5 = botState.customDate; botState = { type: 'IDLE' }; processTransaction(o1, o1, cn1, {}, cd5); 
+      }
+      else if (botState.type === 'WAIT_NEW_PROD_PRICE_MULTI') {
+          var parts = text.split(","); var newVars = {}; for (var i=0; i<parts.length; i++) { var m = parts[i].match(/([^\d]+)\s+(\d+(?:\.\d+)?)/); if (m) newVars[m[1].trim()] = parseFloat(m[2]); }
+          if(!products[botState.newProdName]) products[botState.newProdName] = {}; Object.assign(products[botState.newProdName], newVars); saveData();
+          addMessage("تم الإضافة.", "bot", "chat-container"); var o2 = botState.origText; var cn2 = botState.custName; var cd6 = botState.customDate; botState = { type: 'IDLE' }; processTransaction(o2, o2, cn2, {}, cd6);
+      }
+  }
+
+  // --- الأرشيف واسترجاع اليوميات ---
+  function addArchiveWelcomeMsg() { if(!archiveWelcomeShown) { addMessage("<b>أرشيف ومحرك البحث</b><br>- للبحث عن حساب: <b>حساب اشرف يوم 23/3</b><br>- لطلب يومية سابقة كصورة: <b>اريد يومية 15/3</b>", "bot", "archive-container"); archiveWelcomeShown = true; } }
+  
+  function handleArchiveInput() {
+      var inputField = document.getElementById("archive-input"); var rawText = inputField.value.trim();
+      if (!rawText) return; addMessage(rawText, "user", "archive-container"); inputField.value = ""; var text = toEnglishNumbers(rawText);
+
+      // طلب يومية لتاريخ سابق من الأرشيف كصورة
+      var dailyLogMatch = text.match(/(?:يومية|يوميه)\s*(?:يوم|بتاريخ)?\s*(\d{1,2}[-/]\d{1,2})/);
+      if (dailyLogMatch) {
+          var dateStr = getShortDate(dailyLogMatch[1].replace('-', '/'));
+          var logItems = invoicesArchive.filter(inv => getShortDate(inv.date) === dateStr);
+          if(logItems.length === 0) { addMessage("لا توجد يومية أو حسابات مسجلة لهذا التاريخ.", "bot", "archive-container"); return; }
+          
+          var pastLogArray = logItems.map(inv => {
+              var zs = 0, zk = 0;
+              if(inv.detailsArray) { inv.detailsArray.forEach(item => { if(item.name.indexOf("زبادي صغير")!==-1) zs += item.qty; if(item.name.indexOf("زبادي كبير")!==-1) zk += item.qty; }); }
+              return { name: inv.customer, oldBal: inv.oldBal, billVal: inv.total, z_s: zs||"-", z_k: zk||"-", details: inv.itemsText, paid: inv.paid, newBal: inv.remaining };
+          });
+          
+          var pageSize = 16; var totalPages = Math.ceil(pastLogArray.length / pageSize);
+          for (var p = 0; p < totalPages; p++) { createCanvasImage(p, pageSize, dateStr, pastLogArray); }
+          addMessage("تم استخراج يومية " + dateStr + " بنجاح وتجهيز الصور.", "bot", "archive-container");
+          return;
+      }
+
+      var custDateMatch = text.match(/(?:فواتير|فاتورة|بيان|حساب)\s+(.+?)\s+(?:يوم|بتاريخ)\s+(\d{1,2}[-/]\d{1,2})/);
+      var justDateMatch = text.match(/(\d{1,2})[-/](\d{1,2})/);
+      var foundInvoices = []; var replyMsg = "";
+
+      if (custDateMatch) {
+          var cName = custDateMatch[1].trim(); var dateStr = getShortDate(custDateMatch[2].replace('-', '/'));
+          var idResult = identifyCustomer(cName); var targetName = (idResult.status === 'EXACT' || idResult.status === 'SINGLE_PARTIAL') ? idResult.name : cName;
+          foundInvoices = invoicesArchive.filter(inv => inv.customer === targetName && getShortDate(inv.date) === dateStr);
+          replyMsg = "لا يوجد بيانات حساب لـ " + targetName + " يوم " + dateStr;
+      } else if (justDateMatch) {
+          var dateStr = getShortDate(justDateMatch[1] + "/" + justDateMatch[2]);
+          foundInvoices = invoicesArchive.filter(inv => getShortDate(inv.date) === dateStr);
+          replyMsg = "لا توجد حركات مسجلة ليوم " + dateStr;
+      } else { addMessage("عفواً، لم أفهم طريقة البحث.", "bot", "archive-container"); return; }
+
+      if (foundInvoices.length === 0) { addMessage(replyMsg, "bot", "archive-container"); return; }
+      
+      // هنا نبحث عن الإندكس الحقيقي جوه invoicesArchive عشان زرار المشاركة يشتغل صح
+      for (var j = 0; j < foundInvoices.length; j++) { 
+          var realIdx = invoicesArchive.indexOf(foundInvoices[j]);
+          addMessage(buildInvoiceHTML(foundInvoices[j], realIdx), "bot", "archive-container"); 
+      }
+  }
+
+  // --- مشاركة وتنزيل صورة البيان الفردي ---
+  function processInvoiceAction(index, actionType) {
+      var inv = invoicesArchive[index]; if(!inv) return;
+      var canvas = document.createElement('canvas'); var ctx = canvas.getContext('2d');
+      var items = inv.detailsArray || [{name: inv.itemsText || "-", qty: '-', price: '-', total: inv.total}];
+      var oldBal = inv.oldBal !== undefined ? inv.oldBal : (inv.remaining + inv.paid - inv.total);
+      var rowH = 40; canvas.width = 450; canvas.height = 200 + (items.length * rowH) + 140; 
+      ctx.fillStyle = '#f9f6f0'; ctx.fillRect(0, 0, canvas.width, canvas.height); ctx.fillStyle = '#000000'; ctx.textAlign = 'right'; ctx.textBaseline = 'middle';
+      ctx.font = 'bold 22px Tahoma'; ctx.fillText("🧾 بيان حساب: " + inv.customer, 430, 40); ctx.font = '16px Tahoma'; ctx.fillText("التاريخ: " + inv.date, 430, 75);
+      ctx.font = 'bold 18px Tahoma'; ctx.fillStyle = '#555'; ctx.fillText("رصيد سابق: " + oldBal + " ج", 430, 120);
+      var currentY = 170; ctx.fillStyle = '#000000'; ctx.beginPath(); ctx.moveTo(20, currentY-rowH/2); ctx.lineTo(430, currentY-rowH/2); ctx.stroke();
+      ctx.fillStyle = '#e9ecef'; ctx.fillRect(20, currentY-rowH/2, 410, rowH); ctx.fillStyle = '#000000'; ctx.font = 'bold 16px Tahoma';
+      var cols = [ { x: 430, w: 180, t: "المنتج" }, { x: 250, w: 60,  t: "العدد" }, { x: 190, w: 80,  t: "السعر" }, { x: 110, w: 90,  t: "الإجمالي" } ];
+      for(var c=0; c<cols.length; c++) { ctx.beginPath(); ctx.moveTo(cols[c].x - cols[c].w, currentY-rowH/2); ctx.lineTo(cols[c].x - cols[c].w, currentY+rowH/2); ctx.stroke(); ctx.fillText(cols[c].t, cols[c].x - 10, currentY); }
+      ctx.beginPath(); ctx.moveTo(430, currentY-rowH/2); ctx.lineTo(430, currentY+rowH/2); ctx.stroke(); ctx.beginPath(); ctx.moveTo(20, currentY+rowH/2); ctx.lineTo(430, currentY+rowH/2); ctx.stroke();
+      ctx.font = '15px Tahoma'; currentY += rowH;
+      for (var j = 0; j < items.length; j++) {
+          var item = items[j]; var data = [item.name, item.qty, item.price, item.total];
+          for(var k=0; k<cols.length; k++) { ctx.beginPath(); ctx.moveTo(cols[k].x - cols[k].w, currentY-rowH/2); ctx.lineTo(cols[k].x - cols[k].w, currentY+rowH/2); ctx.stroke(); ctx.fillText(data[k], cols[k].x - 10, currentY, cols[k].w - 15); }
+          ctx.beginPath(); ctx.moveTo(430, currentY-rowH/2); ctx.lineTo(430, currentY+rowH/2); ctx.stroke(); ctx.beginPath(); ctx.moveTo(20, currentY+rowH/2); ctx.lineTo(430, currentY+rowH/2); ctx.stroke(); currentY += rowH;
+      }
+      currentY += 20; ctx.font = '16px Tahoma'; ctx.fillStyle = '#333'; ctx.fillText("إجمالي الحساب: " + inv.total + " ج", 430, currentY); currentY += 30; ctx.fillText("المدفوع نقدي: " + inv.paid + " ج", 430, currentY); currentY += 25; ctx.beginPath(); ctx.setLineDash([5, 5]); ctx.moveTo(20, currentY); ctx.lineTo(430, currentY); ctx.stroke(); ctx.setLineDash([]); currentY += 30; ctx.font = 'bold 20px Tahoma'; ctx.fillStyle = '#000'; ctx.fillText("الرصيد الحالي المستحق: " + inv.remaining + " ج", 430, currentY);
+
+      canvas.toBlob(function(blob) {
+          var safeName = inv.customer.replace(/\s+/g, '_'); var safeDate = inv.date.replace(/\//g, '-');
+          var fileName = "بيان_حساب_" + safeName + "_" + safeDate + ".jpg";
+          
+          if (actionType === 'share' && navigator.canShare) {
+              var file = new File([blob], fileName, { type: 'image/jpeg' });
+              if(navigator.canShare({files: [file]})) {
+                  navigator.share({ files: [file], title: 'بيان حساب', text: 'مرفق بيان حساب: ' + inv.customer })
+                  .catch(err => console.log('Share error:', err));
+              } else { alert("عذراً، متصفحك لا يدعم المشاركة المباشرة للصور. يرجى استخدام زر التحميل بدلاً من ذلك."); }
+          } else {
+              var link = document.createElement("a"); link.href = canvas.toDataURL("image/jpeg", 1.0);
+              link.download = fileName; document.body.appendChild(link); link.click(); document.body.removeChild(link);
+          }
+      }, 'image/jpeg', 1.0);
+  }
+
+  function endOfDay() {
+      if(dailyLog.length === 0) { addMessage("اليومية فارغة!", "bot", "chat-container"); return; }
+      var dateStr = getTodayDate(); addMessage("تم انتهاء اليوم بتاريخ " + dateStr + "<br>جاري تجهيز صور اليومية...", "bot", "chat-container");
+      var pageSize = 16; var totalPages = Math.ceil(dailyLog.length / pageSize);
+      for (var p = 0; p < totalPages; p++) { createCanvasImage(p, pageSize, dateStr, dailyLog); }
+      dailyLog = []; saveData(); addMessage("تم حفظ وتصفير دفتر اليومية.<br><b>هل تريد مسح دردشة اليوم للبدء على نظافة؟ (نعم / لا)</b>", "bot", "chat-container"); botState = { type: 'WAIT_CLEAR_CHAT' };
+  }
+
+  // تم تعديل الدالة لتقبل مصفوفة البيانات، حتى تعمل لليومية الحالية واليوميات السابقة
+  function createCanvasImage(pageIndex, pageSize, dateStr, currentLogArray) {
+      var logData = currentLogArray || dailyLog;
+      var canvas = document.createElement('canvas'); canvas.width = 900; var rowHeight = 35; canvas.height = 100 + (18 * rowHeight); var ctx = canvas.getContext('2d'); ctx.fillStyle = '#ffffff'; ctx.fillRect(0, 0, canvas.width, canvas.height); ctx.fillStyle = '#000000'; ctx.textAlign = 'center'; ctx.textBaseline = 'middle'; ctx.font = 'bold 20px Tahoma'; ctx.fillText("دفتر اليومية - صفحة (" + (pageIndex + 1) + ") - " + dateStr, 450, 30); ctx.font = 'bold 16px Tahoma'; ctx.lineWidth = 1;
+      var cols = [ { x: 860, w: 40, t: "م" }, { x: 720, w: 140, t: "العميل" }, { x: 630, w: 90, t: "سابق" }, { x: 540, w: 90, t: "حساب" }, { x: 490, w: 50, t: "ز ص" }, { x: 440, w: 50, t: "ز ك" }, { x: 240, w: 200, t: "البيان" }, { x: 150, w: 90, t: "التحصيل" }, { x: 0, w: 150, t: "الباقي" } ];
+      function drawRow(y, isH, d) { ctx.beginPath(); ctx.moveTo(0, y - rowHeight/2); ctx.lineTo(900, y - rowHeight/2); ctx.stroke(); for(var i=0; i<cols.length; i++) { var c = cols[i]; ctx.beginPath(); ctx.moveTo(c.x + c.w, y - rowHeight/2); ctx.lineTo(c.x + c.w, y + rowHeight/2); ctx.stroke(); ctx.fillText(isH ? c.t : d[i], c.x + c.w/2, y, c.w - 10); } ctx.beginPath(); ctx.moveTo(0, y - rowHeight/2); ctx.lineTo(0, y + rowHeight/2); ctx.stroke(); }
+      drawRow(80, true, []); var start = pageIndex * pageSize; var pageTotalPaid = 0; var currentY = 80 + rowHeight; ctx.font = '14px Tahoma';
+      for (var i = 0; i < 16; i++) { var dIdx = start + i; if (dIdx < logData.length) { var r = logData[dIdx]; pageTotalPaid += r.paid; drawRow(currentY, false, [(dIdx + 1), r.name, r.oldBal, r.billVal, (r.z_s || "-"), (r.z_k || "-"), r.details, r.paid, r.newBal]); } else { drawRow(currentY, false, ["", "", "", "", "", "", "", "", ""]); } currentY += rowHeight; }
+      ctx.beginPath(); ctx.moveTo(0, currentY - rowHeight/2); ctx.lineTo(900, currentY - rowHeight/2); ctx.stroke(); ctx.fillStyle = '#f5f5f5'; ctx.fillRect(0, currentY - rowHeight/2 + 1, 900, rowHeight - 2); ctx.fillStyle = '#000000'; ctx.font = 'bold 18px Tahoma'; ctx.fillText("إجمالي التحصيل لهذه الصفحة:", 340, currentY); ctx.fillStyle = '#0052cc'; ctx.fillText(pageTotalPaid + " ج", 195, currentY); ctx.fillStyle = '#000000'; ctx.beginPath(); ctx.moveTo(240, currentY - rowHeight/2); ctx.lineTo(240, currentY + rowHeight/2); ctx.stroke(); ctx.beginPath(); ctx.moveTo(150, currentY - rowHeight/2); ctx.lineTo(150, currentY + rowHeight/2); ctx.stroke(); ctx.beginPath(); ctx.moveTo(0, currentY + rowHeight/2); ctx.lineTo(900, currentY + rowHeight/2); ctx.stroke();
+      var link = document.createElement("a"); link.href = canvas.toDataURL("image/png"); link.download = "يومية_صفحة_" + (pageIndex + 1) + "_" + dateStr.replace(/\//g,'-') + ".png"; document.body.appendChild(link); link.click(); document.body.removeChild(link);
+  }
+</script>
+</body>
+</html>
