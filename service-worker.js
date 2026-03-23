@@ -1,22 +1,25 @@
-const CACHE_NAME = "fato-app-v2";
+const CACHE_NAME = 'fato-v1';
 
 const urlsToCache = [
-  "/",
-  "/index.html",
-  "/manifest.json",
-  "/icon.png"
+  '/fato-app/',
+  '/fato-app/index.html',
+  '/fato-app/style.css',
+  '/fato-app/script.js',
+  '/fato-app/manifest.json'
 ];
 
-self.addEventListener("install", event => {
+self.addEventListener('install', event => {
   event.waitUntil(
-    caches.open(CACHE_NAME)
-      .then(cache => cache.addAll(urlsToCache))
+    caches.open(CACHE_NAME).then(cache => {
+      return cache.addAll(urlsToCache);
+    })
   );
 });
 
-self.addEventListener("fetch", event => {
+self.addEventListener('fetch', event => {
   event.respondWith(
-    caches.match(event.request)
-      .then(response => response || fetch(event.request))
+    caches.match(event.request).then(response => {
+      return response || fetch(event.request);
+    })
   );
 });
