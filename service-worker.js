@@ -1,4 +1,4 @@
-const CACHE_NAME = "fato-app";
+const CACHE_NAME = "fato-app-v1";
 
 const urlsToCache = [
   "/",
