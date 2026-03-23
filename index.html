@@ -1,5 +1,4 @@
 <!DOCTYPE html>
-<link rel="manifest" href="manifest.json">
 <html dir="rtl" lang="ar">
 <head>
 <meta charset="UTF-8">
@@ -52,11 +51,7 @@
 </style>
 </head>
 <body>
-<script>
-if ('serviceWorker' in navigator) {
-  navigator.serviceWorker.register('service-worker.js');
-}
-</script>
+
 <div id="login-screen" class="screen active-screen">
   <div id="login-box">
     <h2>🔒 النظام المحاسبي</h2>
@@ -151,8 +146,8 @@ function printInvoiceThermal(index) {
           } 
           printContent += "</table><hr>";
       }
-      printContent += "إجمالي الحساب: <b>" + inv.total + " ج</b><br>";
-      printContent += "المدفوع نقدي: <b>" + inv.paid + " ج</b><br><hr>";
+      if (inv.total > 0) { printContent += "إجمالي الحساب: <b>" + inv.total + " ج</b><br>"; }
+printContent += "المدفوع نقدي: <b>" + inv.paid + " ج</b><br><hr>";
       printContent += "<b>الباقي المستحق: " + inv.remaining + " ج</b><br>";
       printContent += "<br><center>شكراً لتعاملكم معنا</center><br><br>";
 
@@ -312,7 +307,9 @@ function printInvoiceThermal(index) {
           reply += "<table class='invoice-table'><tr><th>المنتج</th><th>العدد</th><th>السعر</th><th>الإجمالي</th></tr>";
           for (var i = 0; i < items.length; i++) { reply += "<tr><td>" + items[i].name + "</td><td>" + items[i].qty + "</td><td>" + items[i].price + "</td><td>" + items[i].total + "</td></tr>"; } reply += "</table>";
       }
-      reply += "<div class='invoice-summary'>إجمالي الحساب: " + inv.total + " ج<br>المدفوع نقدي: " + inv.paid + " ج<br><hr style='margin: 8px 0;'><b>الرصيد الحالي المستحق: " + inv.remaining + " ج</b></div>";
+      reply += "<div class='invoice-summary'>";
+if (inv.total > 0) { reply += "إجمالي الحساب: " + inv.total + " ج<br>"; }
+reply += "المدفوع نقدي: " + inv.paid + " ج<br><hr style='margin: 8px 0;'><b>الرصيد الحالي المستحق: " + inv.remaining + " ج</b></div>";
       
       // أزرار المشاركة والطباعة
       var realIndex = index !== undefined ? index : (invoicesArchive.length - 1);
@@ -623,7 +620,10 @@ function printInvoiceThermal(index) {
           for(var k=0; k<cols.length; k++) { ctx.beginPath(); ctx.moveTo(cols[k].x - cols[k].w, currentY-rowH/2); ctx.lineTo(cols[k].x - cols[k].w, currentY+rowH/2); ctx.stroke(); ctx.fillText(data[k], cols[k].x - 10, currentY, cols[k].w - 15); }
           ctx.beginPath(); ctx.moveTo(430, currentY-rowH/2); ctx.lineTo(430, currentY+rowH/2); ctx.stroke(); ctx.beginPath(); ctx.moveTo(20, currentY+rowH/2); ctx.lineTo(430, currentY+rowH/2); ctx.stroke(); currentY += rowH;
       }
-      currentY += 20; ctx.font = '16px Tahoma'; ctx.fillStyle = '#333'; ctx.fillText("إجمالي الحساب: " + inv.total + " ج", 430, currentY); currentY += 30; ctx.fillText("المدفوع نقدي: " + inv.paid + " ج", 430, currentY); currentY += 25; ctx.beginPath(); ctx.setLineDash([5, 5]); ctx.moveTo(20, currentY); ctx.lineTo(430, currentY); ctx.stroke(); ctx.setLineDash([]); currentY += 30; ctx.font = 'bold 20px Tahoma'; ctx.fillStyle = '#000'; ctx.fillText("الرصيد الحالي المستحق: " + inv.remaining + " ج", 430, currentY);
+      currentY += 20; ctx.font = '16px Tahoma'; ctx.fillStyle = '#333'; 
+if (inv.total > 0) { ctx.fillText("إجمالي الحساب: " + inv.total + " ج", 430, currentY); currentY += 30; }
+ctx.fillText("المدفوع نقدي: " + inv.paid + " ج", 430, currentY); currentY += 25; ctx.beginPath();
+ctx.setLineDash([5, 5]); ctx.moveTo(20, currentY); ctx.lineTo(430, currentY); ctx.stroke(); ctx.setLineDash([]); currentY += 30; ctx.font = 'bold 20px Tahoma'; ctx.fillStyle = '#000'; ctx.fillText("الرصيد الحالي المستحق: " + inv.remaining + " ج", 430, currentY);
 
       canvas.toBlob(function(blob) {
           var safeName = inv.customer.replace(/\s+/g, '_'); var safeDate = inv.date.replace(/\//g, '-');
